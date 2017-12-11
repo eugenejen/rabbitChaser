@@ -11,7 +11,6 @@ import com.rabbitmq.client.impl.StandardMetricsCollector;
 import java.net.URI;
 
 public class Main {
-
     private Logger logger;
     private URI rabbitmqUri;
     private StandardMetricsCollector metrics;
@@ -28,17 +27,24 @@ public class Main {
         return this;
     }
 
-    public Main init() {
+    public Main init(TestParams testParams) {
         MetricRegistry metricRegistry = new MetricRegistry();
         this.metrics = new StandardMetricsCollector(metricRegistry);
         this.factory = new CachingConnectionFactory(rabbitmqUri);
+        factory.setCacheMode(testParams.cacheMode);
+        factory.setChannelCacheSize(testParams.channelSize);
+        factory.setConnectionCacheSize(testParams.connectionSize);
+
         this.factory.getRabbitConnectionFactory().setMetricsCollector(metrics);
         template = new RabbitTemplate(this.factory);
         return this;
     }
 
-    public Main startTest() {
-        this.template.convertAndSend("default", "Hello World");
+    public Main startTest(TestParams testParams) {
+        for(int i = 0; i < testParams.numberOfTests; i++) {
+            this.template.convertAndSend("default", "Hello World");
+            this.info("send message {}", "Hello World");
+        }
         return this;
     }
 
@@ -51,11 +57,18 @@ public class Main {
         try {
             Logger logger = LoggerFactory.getLogger(Main.class);
             String rabbitmqUrl = System.getProperty("rabbitmqUrl", "amqp://localhost:5672");
+
+            TestParams testParams = new TestParams();
+            testParams.channelSize = Integer.parseInt(System.getProperty("channelSize", "1"));
+            testParams.connectionSize = Integer.parseInt(System.getProperty("connectionsSize", "1"));
+            testParams.numberOfTests = Integer.parseInt(System.getProperty("numberOfTests", "1"));
+
             Main main = new Main(logger, rabbitmqUrl);
-            main.init();
+            main.init(testParams);
+
             main.info("{}", main.rabbitmqUri.toString());
             main.info("{}", main.factory.toString());
-            main.startTest();
+            main.startTest(testParams);
             main.reportMetrics();
             System.exit(0);
         } catch (Exception e) {
