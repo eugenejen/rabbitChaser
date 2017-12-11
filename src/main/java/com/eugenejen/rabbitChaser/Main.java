@@ -50,7 +50,7 @@ public class Main {
     public static void main(String args[]) throws Exception {
         try {
             Logger logger = LoggerFactory.getLogger(Main.class);
-            String rabbitmqUrl = System.getProperty("rabbitmqUrl", "amqp://guest:guest@localhost:5672/");
+            String rabbitmqUrl = System.getProperty("rabbitmqUrl", "amqp://guest:guest@localhost:5672");
             Main main = new Main(logger, rabbitmqUrl);
             main.init();
             main.info("{}", main.rabbitmqUri.toString());
