@@ -9,6 +9,9 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import com.rabbitmq.client.impl.StandardMetricsCollector;
 import java.net.URI;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
     private Logger logger;
@@ -16,6 +19,7 @@ public class Main {
     private StandardMetricsCollector metrics;
     private CachingConnectionFactory factory;
     private RabbitTemplate template;
+    private ExecutorService threadPool;
 
     Main(Logger logger, String rabbitmqUrl) throws Exception {
         this.logger = logger;
@@ -34,17 +38,28 @@ public class Main {
         factory.setCacheMode(testParams.cacheMode);
         factory.setChannelCacheSize(testParams.channelSize);
         factory.setConnectionCacheSize(testParams.connectionSize);
-
+        this.threadPool = Executors.newFixedThreadPool(testParams.numberOfThreads);
         this.factory.getRabbitConnectionFactory().setMetricsCollector(metrics);
         template = new RabbitTemplate(this.factory);
         return this;
     }
 
-    public Main startTest(TestParams testParams) {
+    public Main startTest(TestParams testParams) throws Exception {
         for(int i = 0; i < testParams.numberOfTests; i++) {
-            this.template.convertAndSend("default", "Hello World");
-            this.info("send message {}", "Hello World");
+            this.threadPool.submit(
+                () -> {
+                    this.template.convertAndSend("default", "Hello World");
+                    this.info("send message {}", "Hello World");
+                }
+            );
         }
+        this.threadPool.shutdown();
+        this.threadPool.awaitTermination(10, TimeUnit.MINUTES);
+        return this;
+    }
+
+    public Main endTest(TestParams testParams) throws Exception {
+        this.factory.destroy();
         return this;
     }
 
@@ -70,6 +85,7 @@ public class Main {
             main.info("{}", main.factory.toString());
             main.startTest(testParams);
             main.reportMetrics();
+            main.endTest(testParams);
             System.exit(0);
         } catch (Exception e) {
             System.err.println(e.getMessage());

@@ -7,8 +7,5 @@ public class TestParams {
     public CachingConnectionFactory.CacheMode cacheMode = CachingConnectionFactory.CacheMode.CHANNEL;
     public int channelSize = 1;
     public int connectionSize = 1;
-
-    public TestParams() {
-
-    };
+    public int numberOfThreads = 1;
 };
