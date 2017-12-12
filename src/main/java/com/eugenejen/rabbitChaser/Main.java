@@ -38,7 +38,7 @@ public class Main {
         factory.setCacheMode(testParams.cacheMode);
         factory.setChannelCacheSize(testParams.channelSize);
         factory.setConnectionCacheSize(testParams.connectionSize);
-        this.threadPool = Executors.newFixedThreadPool(testParams.numberOfThreads);
+        this.threadPool = Executors.newFixedThreadPool(testParams.threadPoolSize);
         this.factory.getRabbitConnectionFactory().setMetricsCollector(metrics);
         template = new RabbitTemplate(this.factory);
         return this;
@@ -77,6 +77,7 @@ public class Main {
             testParams.channelSize = Integer.parseInt(System.getProperty("channelSize", "1"));
             testParams.connectionSize = Integer.parseInt(System.getProperty("connectionsSize", "1"));
             testParams.numberOfTests = Integer.parseInt(System.getProperty("numberOfTests", "1"));
+            testParams.threadPoolSize = Integer.parseInt(System.getProperty("threadPoolSize", "1"));
 
             Main main = new Main(logger, rabbitmqUrl);
             main.init(testParams);
