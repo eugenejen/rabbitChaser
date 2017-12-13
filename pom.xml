@@ -10,6 +10,13 @@
     <packaging>jar</packaging>
 
     <dependencies>
+
+        <dependency>
+            <groupId>de.sven-jacobs</groupId>
+            <artifactId>loremipsum</artifactId>
+            <version>1.0</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.amqp</groupId>
             <artifactId>spring-rabbit</artifactId>
@@ -43,13 +50,13 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>1.7.12</version>
+            <version>1.7.25</version>
         </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
-            <version>1.7.12</version>
+            <version>1.7.25</version>
         </dependency>
     </dependencies>
     <build>
