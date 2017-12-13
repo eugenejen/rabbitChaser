@@ -12,6 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.Random;
 
+import org.slf4j.impl.SimpleLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -149,15 +150,16 @@ public class Main {
 
     public static void main(String args[]) throws Exception {
         try {
-            Logger logger = LoggerFactory.getLogger(Main.class);
             String rabbitmqUrl = System.getProperty("rabbitmqUrl", "amqp://localhost:5672");
             String mode = System.getProperty("mode", "send").toLowerCase();
+            String logLevel = System.getProperty("logLevel", "info").toUpperCase();
+            System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel);
+            Logger logger = LoggerFactory.getLogger(Main.class);
             TestParams testParams = new TestParams();
             testParams.channelSize = Integer.parseInt(System.getProperty("channelSize", "1"));
             testParams.connectionSize = Integer.parseInt(System.getProperty("connectionsSize", "1"));
             testParams.numberOfTests = Integer.parseInt(System.getProperty("numberOfTests", "1"));
             testParams.threadPoolSize = Integer.parseInt(System.getProperty("threadPoolSize", "1"));
-
             Main main = new Main(logger, rabbitmqUrl, mode, testParams);
             main.debug("{}", main.toString());
             main.info("{}", testParams.toString());
