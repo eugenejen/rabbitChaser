@@ -1,17 +1,23 @@
 package com.eugenejen.rabbitChaser;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.codahale.metrics.MetricRegistry;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.core.MessageProperties;
-import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+
 import com.rabbitmq.client.impl.StandardMetricsCollector;
+import com.codahale.metrics.MetricRegistry;
+
+import de.svenjacobs.loremipsum.LoremIpsum;
+
 import java.net.URI;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.Random;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 public class Main {
     private Logger logger;
@@ -21,16 +27,26 @@ public class Main {
     private CachingConnectionFactory factory;
     private RabbitTemplate template;
     private ExecutorService threadPool;
+    private LoremIpsum messageGenerator;
+    private Random randomNumberGenerator;
+
 
     Main(Logger logger, String rabbitmqUrl, String mode, TestParams testParams) throws Exception {
         this.logger = logger;
         this.mode = mode;
         this.rabbitmqUri = new URI(rabbitmqUrl);
+        this.messageGenerator = new LoremIpsum();
+        this.randomNumberGenerator = new Random();
         this.init(testParams);
     }
 
     public Main info(String fmt, Object ... args ) {
         this.logger.info(fmt, args);
+        return this;
+    }
+
+    public Main debug(String fmt, Object ... args ) {
+        this.logger.debug(fmt, args);
         return this;
     }
 
@@ -69,6 +85,13 @@ public class Main {
         return this;
     }
 
+    private String generateMessage(TestParams testParams) {
+        int messageLength = this.randomNumberGenerator.nextInt(
+            testParams.maxMessageSizeInWords - testParams.minMessageSizeInWords
+            ) + testParams.minMessageSizeInWords;
+        return this.messageGenerator.getWords(messageLength);
+    }
+
     private Main drainQueue() throws Exception {
         this.threadPool.submit(
             () -> {
@@ -84,7 +107,7 @@ public class Main {
     private Main startFiniteTest(TestParams testParams) throws Exception {
         for(int i = 0; i < testParams.numberOfTests; i++) {
             if (this.mode.equals("send")) {
-                this.sendToQueue();
+                this.sendToQueue(testParams);
             } else if(this.mode.equals("read")) {
                 this.readFromQueue();
             }
@@ -100,17 +123,17 @@ public class Main {
             () -> {
                 String message;
                  message = (String) this.template.receiveAndConvert("default");
-                 this.info("read message message {}", message);
+                 this.debug("read message message {}", message);
             }
        );
         return this;
     }
 
-    private Main sendToQueue() throws Exception {
+    private Main sendToQueue(TestParams testParams) throws Exception {
         this.threadPool.submit(
             () -> {
-                this.template.convertAndSend("default", "Hello World");
-                this.info("send message {}", "Hello World");
+                this.template.convertAndSend("default", this.generateMessage(testParams));
+                this.debug("send message {}", "Hello World");
             }
         );
         return this;
@@ -138,7 +161,7 @@ public class Main {
             testParams.threadPoolSize = Integer.parseInt(System.getProperty("threadPoolSize", "1"));
 
             Main main = new Main(logger, rabbitmqUrl, mode, testParams);
-            main.info("{}", main.toString());
+            main.debug("{}", main.toString());
             main.info("{}", testParams.toString());
             main.startTest(testParams);
             main.reportMetrics();

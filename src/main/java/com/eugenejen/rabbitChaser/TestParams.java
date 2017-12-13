@@ -8,14 +8,19 @@ public class TestParams {
     public int channelSize = 1;
     public int connectionSize = 1;
     public int threadPoolSize = 1;
+    public int minMessageSizeInWords = 20000;
+    public int maxMessageSizeInWords = 40000;
 
     public String toString() {
         return String.format("TestParams [numberOfTests=%d, " +
                              "channelSize=%d, " +
                              "connectionSize=%d, " +
-                             "threadPoolSize=%d]",
+                             "threadPoolSize=%d, " +
+                             "minMessageSize=%d, " +
+                             "maxMessageSize=%d]",
                              this.numberOfTests, this.channelSize,
-                             this.connectionSize, this.threadPoolSize
+                             this.connectionSize, this.threadPoolSize,
+                             this.minMessageSizeInWords, this.maxMessageSizeInWords
                              );
     }
 };
