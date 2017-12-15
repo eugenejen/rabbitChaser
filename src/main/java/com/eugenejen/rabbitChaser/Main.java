@@ -1,6 +1,7 @@
 package com.eugenejen.rabbitChaser;
 
 import com.codahale.metrics.ConsoleReporter;
+import com.codahale.metrics.CsvReporter;
 import com.codahale.metrics.MetricRegistry;
 import com.rabbitmq.client.impl.StandardMetricsCollector;
 import org.slf4j.Logger;
@@ -8,7 +9,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
+import java.io.File;
 import java.net.URI;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -20,21 +23,29 @@ public class Main {
     private MetricRegistry registry;
     private CachingConnectionFactory factory;
     private ExecutorService threadPool;
-    private ConsoleReporter reporter;
+    private ConsoleReporter consoleReporter;
+    private CsvReporter csvReporter;
     private Runnable test;
 
-    Main(String rabbitmqUrl, String mode, TestParams testParams) throws Exception {
+    Main(String rabbitmqUrl, String mode, TestParams testParams, String csvReportPath) throws Exception {
         this.mode = mode;
         this.rabbitmqUri = new URI(rabbitmqUrl);
         this.registry = new MetricRegistry();
-        this.init(testParams);
+        this.init(testParams, csvReportPath);
     }
 
-    public Main init(TestParams testParams) {
-        this.reporter = ConsoleReporter.forRegistry(this.registry)
-                                       .convertRatesTo(TimeUnit.SECONDS)
-                                       .convertDurationsTo(TimeUnit.MILLISECONDS)
-                                       .build();
+    public Main init(TestParams testParams, String csvReportPath) throws Exception {
+        File path = new File(csvReportPath);
+        path.mkdirs();
+        this.consoleReporter = ConsoleReporter.forRegistry(this.registry)
+                                              .convertRatesTo(TimeUnit.SECONDS)
+                                              .convertDurationsTo(TimeUnit.MILLISECONDS)
+                                              .build();
+        this.csvReporter = CsvReporter.forRegistry(this.registry)
+                                      .formatFor(Locale.US)
+                                      .convertRatesTo(TimeUnit.SECONDS)
+                                      .convertDurationsTo(TimeUnit.MILLISECONDS)
+                                      .build(path);
         StandardMetricsCollector collector = new StandardMetricsCollector(this.registry);
         this.factory = new CachingConnectionFactory(rabbitmqUri);
         factory.setCacheMode(testParams.cacheMode);
@@ -54,29 +65,33 @@ public class Main {
     }
 
     private void runTest() throws Exception {
-        this.reporter.start(1, TimeUnit.SECONDS);
+        this.csvReporter.start(1, TimeUnit.SECONDS);
+        this.consoleReporter.start(1, TimeUnit.SECONDS);
         this.test.run();
         this.threadPool.shutdown();
         this.threadPool.awaitTermination(10, TimeUnit.MINUTES);
     }
 
     public void endTest() {
-        this.reporter.stop();
+        this.consoleReporter.stop();
+        this.csvReporter.stop();
         this.factory.destroy();
-        this.reporter.report();
+        this.csvReporter.report();
+        this.consoleReporter.report();
     }
 
     public static void main(String args[]) throws Exception {
         try {
             String rabbitmqUrl = System.getProperty("rabbitmqUrl", "amqp://localhost:5672");
             String mode = System.getProperty("mode", "send").toLowerCase();
+            String csvReportPath = System.getProperty("reportPath", "/tmp");
             TestParams testParams = new TestParams();
             testParams.channelSize = Integer.parseInt(System.getProperty("channelSize", "1"));
             testParams.connectionSize = Integer.parseInt(System.getProperty("connectionSize", "1"));
             testParams.numberOfTests = Integer.parseInt(System.getProperty("numberOfTests", "1"));
             testParams.threadPoolSize = Integer.parseInt(System.getProperty("threadPoolSize", "1"));
             testParams.queueName = System.getProperty("queueName", "default");
-            Main main = new Main(rabbitmqUrl, mode, testParams);
+            Main main = new Main(rabbitmqUrl, mode, testParams, csvReportPath);
             LOGGER.info("{}", main.toString());
             LOGGER.info("{}", testParams.toString());
             main.runTest();
