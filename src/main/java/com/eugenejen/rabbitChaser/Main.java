@@ -12,8 +12,11 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import java.io.File;
 import java.net.URI;
 import java.util.Locale;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
@@ -51,7 +54,11 @@ public class Main {
         factory.setCacheMode(testParams.cacheMode);
         factory.setChannelCacheSize(testParams.channelSize);
         factory.setConnectionCacheSize(testParams.connectionSize);
-        this.threadPool = Executors.newFixedThreadPool(testParams.threadPoolSize);
+        this.threadPool = new ThreadPoolExecutor(testParams.threadPoolSize,
+                                                 testParams.threadPoolSize, 0L,
+                                                 TimeUnit.MILLISECONDS,
+                                                 new ArrayBlockingQueue<>(2000),
+                                                 new ThreadPoolExecutor.CallerRunsPolicy());
         this.factory.getRabbitConnectionFactory().setMetricsCollector(collector);
         RabbitTemplate template = new RabbitTemplate(this.factory);
 
