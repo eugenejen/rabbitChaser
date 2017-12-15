@@ -2,7 +2,9 @@ package com.eugenejen.rabbitChaser;
 
 
 import com.rabbitmq.client.impl.StandardMetricsCollector;
+import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Meter;
 
 import de.svenjacobs.loremipsum.LoremIpsum;
 
@@ -22,13 +24,14 @@ public class Main {
     private Logger logger;
     private String mode;
     private URI rabbitmqUri;
-    private StandardMetricsCollector metrics;
+    private StandardMetricsCollector collector;
+    private MetricRegistry registry;
     private CachingConnectionFactory factory;
     private RabbitTemplate template;
     private ExecutorService threadPool;
     private LoremIpsum messageGenerator;
     private Random randomNumberGenerator;
-
+    private ConsoleReporter reporter;
 
     Main(Logger logger, String rabbitmqUrl, String mode, TestParams testParams) throws Exception {
         this.logger = logger;
@@ -36,6 +39,7 @@ public class Main {
         this.rabbitmqUri = new URI(rabbitmqUrl);
         this.messageGenerator = new LoremIpsum();
         this.randomNumberGenerator = new Random();
+        this.registry = new MetricRegistry();
         this.init(testParams);
     }
 
@@ -50,19 +54,24 @@ public class Main {
     }
 
     public Main init(TestParams testParams) {
-        MetricRegistry metricRegistry = new MetricRegistry();
-        this.metrics = new StandardMetricsCollector(metricRegistry);
+        this.reporter = ConsoleReporter.forRegistry(this.registry)
+                                       .convertRatesTo(TimeUnit.SECONDS)
+                                       .convertDurationsTo(TimeUnit.MILLISECONDS)
+                                       .build();
+        this.collector = new StandardMetricsCollector(this.registry);
         this.factory = new CachingConnectionFactory(rabbitmqUri);
         factory.setCacheMode(testParams.cacheMode);
         factory.setChannelCacheSize(testParams.channelSize);
         factory.setConnectionCacheSize(testParams.connectionSize);
         this.threadPool = Executors.newFixedThreadPool(testParams.threadPoolSize);
-        this.factory.getRabbitConnectionFactory().setMetricsCollector(metrics);
+        this.factory.getRabbitConnectionFactory().setMetricsCollector(collector);
         template = new RabbitTemplate(this.factory);
         return this;
+
     }
 
     public Main startTest(TestParams testParams) throws Exception {
+        this.reporter.start(1, TimeUnit.SECONDS);
         if (this.mode.equals("send")) {
             this.startFiniteTest(testParams);
         } else if (this.mode.equals("read")) {
@@ -120,9 +129,8 @@ public class Main {
     private Main readFromQueue() throws Exception {
         this.threadPool.submit(
             () -> {
-                String message;
-                 message = (String) this.template.receiveAndConvert("default");
-                 this.debug("read message message {}", message);
+                 this.template.receiveAndConvert("default");
+                 this.registry.getMeters().get("reqs per sec").mark();
             }
        );
         return this;
@@ -131,20 +139,22 @@ public class Main {
     private Main sendToQueue(TestParams testParams) throws Exception {
         this.threadPool.submit(
             () -> {
-                this.template.convertAndSend("default", this.generateMessage(testParams));
-                this.debug("send message {}", "Hello World");
+                String message = this.generateMessage(testParams);
+                this.template.convertAndSend("default", message);
+                this.registry.getMeters().get("reqs per sec").mark();
             }
         );
         return this;
     }
 
     public Main endTest(TestParams testParams) throws Exception {
+        this.reporter.stop();
         this.factory.destroy();
         return this;
     }
 
     public Main reportMetrics() {
-
+        this.reporter.report();
         return this;
     }
 
@@ -157,7 +167,7 @@ public class Main {
             Logger logger = LoggerFactory.getLogger(Main.class);
             TestParams testParams = new TestParams();
             testParams.channelSize = Integer.parseInt(System.getProperty("channelSize", "1"));
-            testParams.connectionSize = Integer.parseInt(System.getProperty("connectionsSize", "1"));
+            testParams.connectionSize = Integer.parseInt(System.getProperty("connectionSize", "1"));
             testParams.numberOfTests = Integer.parseInt(System.getProperty("numberOfTests", "1"));
             testParams.threadPoolSize = Integer.parseInt(System.getProperty("threadPoolSize", "1"));
             Main main = new Main(logger, rabbitmqUrl, mode, testParams);

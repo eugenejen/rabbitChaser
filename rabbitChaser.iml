@@ -27,6 +27,7 @@
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.8.0" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.8.4" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-context:5.0.2.RELEASE" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework:spring-aop:5.0.2.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-expression:5.0.2.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-messaging:5.0.2.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-tx:5.0.2.RELEASE" level="project" />
@@ -35,11 +36,10 @@
     <orderEntry type="library" name="Maven: com.rabbitmq:amqp-client:5.0.0" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.25" level="project" />
     <orderEntry type="library" name="Maven: io.dropwizard.metrics:metrics-core:3.2.5" level="project" />
-    <orderEntry type="library" name="Maven: org.springframework:spring-jms:4.1.4.RELEASE" level="project" />
-    <orderEntry type="library" name="Maven: org.springframework:spring-aop:4.1.4.RELEASE" level="project" />
-    <orderEntry type="library" name="Maven: aopalliance:aopalliance:1.0" level="project" />
-    <orderEntry type="library" name="Maven: org.springframework:spring-beans:4.1.4.RELEASE" level="project" />
-    <orderEntry type="library" name="Maven: org.springframework:spring-core:4.1.4.RELEASE" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework:spring-jms:5.0.2.RELEASE" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework:spring-beans:5.0.2.RELEASE" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework:spring-core:5.0.2.RELEASE" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework:spring-jcl:5.0.2.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-simple:1.7.25" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:jcl-over-slf4j:1.7.25" level="project" />
   </component>
