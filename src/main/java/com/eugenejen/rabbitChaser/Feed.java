@@ -40,7 +40,7 @@ public class Feed implements Runnable {
             || ("send".equals(mode) && count.incrementAndGet() <= testParams.numberOfTests)){
             try (Timer.Context t = timer.time()) {
                 String message = generateMessage();
-                this.template.convertAndSend("default", message);
+                this.template.convertAndSend(testParams.queueName, message);
             }
         }
     }

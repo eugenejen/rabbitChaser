@@ -10,6 +10,7 @@ public class TestParams {
     public int threadPoolSize = 1;
     public int minMessageSizeInWords = 20000;
     public int maxMessageSizeInWords = 40000;
+    public String queueName = "default";
 
     public String toString() {
         return String.format("TestParams [numberOfTests=%d, " +
@@ -17,10 +18,12 @@ public class TestParams {
                              "connectionSize=%d, " +
                              "threadPoolSize=%d, " +
                              "minMessageSize=%d, " +
-                             "maxMessageSize=%d]",
+                             "maxMessageSize=%d, " +
+                             "queue=%s]",
                              this.numberOfTests, this.channelSize,
                              this.connectionSize, this.threadPoolSize,
-                             this.minMessageSizeInWords, this.maxMessageSizeInWords
+                             this.minMessageSizeInWords, this.maxMessageSizeInWords,
+                             this.queueName
                              );
     }
 };

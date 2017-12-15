@@ -75,6 +75,7 @@ public class Main {
             testParams.connectionSize = Integer.parseInt(System.getProperty("connectionSize", "1"));
             testParams.numberOfTests = Integer.parseInt(System.getProperty("numberOfTests", "1"));
             testParams.threadPoolSize = Integer.parseInt(System.getProperty("threadPoolSize", "1"));
+            testParams.queueName = System.getProperty("queueName", "default");
             Main main = new Main(rabbitmqUrl, mode, testParams);
             LOGGER.info("{}", main.toString());
             LOGGER.info("{}", testParams.toString());

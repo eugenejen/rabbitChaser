@@ -28,7 +28,7 @@ public class Drain implements Runnable {
         String message;
         do {
             try (Timer.Context t = timer.time()) {
-                message = (String) this.template.receiveAndConvert("default");
+                message = (String) this.template.receiveAndConvert(testParams.queueName);
             }
         } while (("drain".equals(mode) && message != null) ||
             ("read".equals(mode) && count.incrementAndGet() <= testParams.numberOfTests));
