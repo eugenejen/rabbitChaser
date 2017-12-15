@@ -14,12 +14,14 @@ public class Drain implements Runnable {
     private TestParams testParams;
     private Timer timer;
     private AtomicInteger count = new AtomicInteger(0);
+    private String mode;
 
-    Drain(ExecutorService executorService, MetricRegistry metricRegistry, RabbitTemplate template, TestParams testParams) {
+    Drain(ExecutorService executorService, MetricRegistry metricRegistry, RabbitTemplate template, String mode, TestParams testParams) {
         this.executorService = executorService;
         this.template = template;
         this.testParams = testParams;
         this.timer = metricRegistry.timer("read");
+        this.mode = mode;
     }
 
     private void readMessage() {
@@ -28,7 +30,8 @@ public class Drain implements Runnable {
             try (Timer.Context t = timer.time()) {
                 message = (String) this.template.receiveAndConvert("default");
             }
-        } while (message != null || (testParams.numberOfTests > 0 && count.incrementAndGet() >= testParams.numberOfTests));
+        } while (("drain".equals(mode) && message != null) ||
+            ("read".equals(mode) && count.incrementAndGet() <= testParams.numberOfTests));
     }
 
     @Override

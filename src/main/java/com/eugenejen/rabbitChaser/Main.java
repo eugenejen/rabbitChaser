@@ -44,10 +44,10 @@ public class Main {
         this.factory.getRabbitConnectionFactory().setMetricsCollector(collector);
         RabbitTemplate template = new RabbitTemplate(this.factory);
 
-        if (this.mode.equals("send")) {
-            this.test = new Send(threadPool, template, registry, testParams);
+        if ("send".equals(this.mode) || "feed".equals(this.mode)) {
+            this.test = new Feed(threadPool, registry, template, this.mode, testParams);
         } else if ("read".equals(this.mode) || "drain".equals(this.mode) ) {
-            this.test = new Drain(threadPool, registry, template, testParams);
+            this.test = new Drain(threadPool, registry, template, this.mode, testParams);
         }
         return this;
 
@@ -70,15 +70,13 @@ public class Main {
         try {
             String rabbitmqUrl = System.getProperty("rabbitmqUrl", "amqp://localhost:5672");
             String mode = System.getProperty("mode", "send").toLowerCase();
-            String logLevel = System.getProperty("logLevel", "info").toUpperCase();
-            System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel);
             TestParams testParams = new TestParams();
             testParams.channelSize = Integer.parseInt(System.getProperty("channelSize", "1"));
             testParams.connectionSize = Integer.parseInt(System.getProperty("connectionSize", "1"));
             testParams.numberOfTests = Integer.parseInt(System.getProperty("numberOfTests", "1"));
             testParams.threadPoolSize = Integer.parseInt(System.getProperty("threadPoolSize", "1"));
             Main main = new Main(rabbitmqUrl, mode, testParams);
-            LOGGER.debug("{}", main.toString());
+            LOGGER.info("{}", main.toString());
             LOGGER.info("{}", testParams.toString());
             main.runTest();
             main.endTest();
