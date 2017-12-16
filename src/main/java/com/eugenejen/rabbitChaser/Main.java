@@ -75,6 +75,11 @@ public class Main {
         this.csvReporter.start(1, TimeUnit.SECONDS);
         this.consoleReporter.start(1, TimeUnit.SECONDS);
         this.test.run();
+        if ("feed".equals(this.mode) || "drain".equals(this.mode)) {
+            while(!Thread.interrupted()) {
+                Thread.sleep(1000);
+            }
+        }
         this.threadPool.shutdown();
         this.threadPool.awaitTermination(10, TimeUnit.MINUTES);
     }
