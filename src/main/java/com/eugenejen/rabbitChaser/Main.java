@@ -102,7 +102,10 @@ public class Main {
             testParams.connectionSize = Integer.parseInt(System.getProperty("connectionSize", "1"));
             testParams.numberOfTests = Integer.parseInt(System.getProperty("numberOfTests", "1"));
             testParams.threadPoolSize = Integer.parseInt(System.getProperty("threadPoolSize", "1"));
+            testParams.minMessageSizeInWords = Integer.parseInt(System.getProperty("minMessageSize","20000"));
+            testParams.maxMessageSizeInWords = Integer.parseInt(System.getProperty("maxMessageSize", "40000"));
             testParams.queueName = System.getProperty("queueName", "default");
+            testParams.compressed = Boolean.parseBoolean(System.getProperty("compressed", "false"));
             Main main = new Main(rabbitmqUrl, mode, testParams, csvReportPath);
             LOGGER.info("{}", main.toString());
             LOGGER.info("{}", testParams.toString());

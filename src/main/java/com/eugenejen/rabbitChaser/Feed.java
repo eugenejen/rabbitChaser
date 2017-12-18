@@ -5,11 +5,17 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import de.svenjacobs.loremipsum.LoremIpsum;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
+import java.io.ByteArrayOutputStream;
 import java.util.Random;
+
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.GZIPOutputStream;
 
 public class Feed implements Runnable {
 
@@ -23,6 +29,7 @@ public class Feed implements Runnable {
     private AtomicInteger count = new AtomicInteger(0);
     private String mode;
     private Counter threadCounter;
+    private MessageProperties messageProperties;
 
     Feed(ExecutorService executorService, MetricRegistry metricRegistry, RabbitTemplate template, String mode, TestParams testParams) {
         this.executorService = executorService;
@@ -32,6 +39,21 @@ public class Feed implements Runnable {
         this.meter = metricRegistry.meter("bytes.sent");
         this.threadCounter = metricRegistry.counter("number.of.threads");
         this.mode = mode;
+        this.messageProperties = new MessageProperties();
+        this.messageProperties.setContentType(MessageProperties.CONTENT_TYPE_BYTES);
+        if (testParams.compressed) {
+            this.messageProperties.setHeader("content-encoding", "gzip");
+        }
+    }
+
+    private byte[] compress(byte[] data) throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(data.length);
+        GZIPOutputStream gzip = new GZIPOutputStream(bos);
+        gzip.write(data);
+        gzip.close();
+        byte[] compressed = bos.toByteArray();
+        bos.close();
+        return compressed;
     }
 
     private String generateMessage() {
@@ -42,12 +64,23 @@ public class Feed implements Runnable {
     }
 
     private void sendMessage() {
+        byte[] messageAsBytes = null;
         while (("feed".equals(mode) && !Thread.interrupted())
             || ("send".equals(mode) && count.incrementAndGet() <= testParams.numberOfTests)){
             try (Timer.Context t = timer.time()) {
                 String message = generateMessage();
-                this.template.convertAndSend(testParams.queueName, message);
-                this.meter.mark(message.length());
+                messageAsBytes = message.getBytes();
+                if (testParams.compressed) {
+                    messageAsBytes = this.compress(message.getBytes());
+                } else {
+                    messageAsBytes = message.getBytes();
+                }
+                Message messageObject = new Message(messageAsBytes, this.messageProperties);
+                this.template.send(testParams.queueName, messageObject);
+            } catch (Exception e) {
+                messageAsBytes = null;
+            } finally {
+                this.meter.mark(messageAsBytes == null ? 0 : messageAsBytes.length);
             }
         }
     }

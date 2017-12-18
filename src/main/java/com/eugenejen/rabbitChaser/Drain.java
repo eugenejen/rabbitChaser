@@ -4,10 +4,17 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.GZIPInputStream;
+import java.util.Map;
+
 
 public class Drain implements Runnable {
 
@@ -30,11 +37,35 @@ public class Drain implements Runnable {
         this.mode = mode;
     }
 
+    public String decompress(byte[] compressed) throws Exception {
+        ByteArrayInputStream bis = new ByteArrayInputStream(compressed);
+        GZIPInputStream gis = new GZIPInputStream(bis);
+        BufferedReader br = new BufferedReader(new InputStreamReader(gis, "UTF-8"));
+        StringBuilder sb = new StringBuilder();
+        String line;
+        while ((line = br.readLine()) != null) {
+            sb.append(line);
+        }
+        br.close();
+        gis.close();
+        bis.close();
+        return sb.toString();
+    }
+
     private void readMessage() {
-        String message;
+        String message = null;
         do {
             try (Timer.Context t = timer.time()) {
-                message = (String) this.template.receiveAndConvert(testParams.queueName);
+                Message mo = this.template.receive(testParams.queueName);
+                Map<String, Object> headers = mo.getMessageProperties().getHeaders();
+                if (headers.containsKey("content-encoding") && headers.get("content-encoding").equals("gzip")) {
+                    message = this.decompress(mo.getBody());
+                } else {
+                    message = new String(mo.getBody(), "UTF-8");
+                }
+            } catch (Exception e) {
+                message = null;
+            } finally {
                 meter.mark((message == null) ? 0 : message.length());
             }
         } while (("drain".equals(mode) && message != null) ||
