@@ -21,7 +21,8 @@ public class Feed implements Runnable {
 
     private ExecutorService executorService;
     private Timer timer;
-    private Meter meter;
+    private Meter originalMeter;
+    private Meter sentMeter;
     private RabbitTemplate template;
     private TestParams testParams;
     private LoremIpsum messageGenerator = new LoremIpsum();
@@ -36,7 +37,8 @@ public class Feed implements Runnable {
         this.template = template;
         this.testParams = testParams;
         this.timer = metricRegistry.timer("send");
-        this.meter = metricRegistry.meter("bytes.sent");
+        this.originalMeter = metricRegistry.meter("bytes.original.size");
+        this.sentMeter = metricRegistry.meter("bytes.send.size");
         this.threadCounter = metricRegistry.counter("number.of.threads");
         this.mode = mode;
         this.messageProperties = new MessageProperties();
@@ -65,10 +67,11 @@ public class Feed implements Runnable {
 
     private void sendMessage() {
         byte[] messageAsBytes = null;
+        String message = null;
         while (("feed".equals(mode) && !Thread.interrupted())
             || ("send".equals(mode) && count.incrementAndGet() <= testParams.numberOfTests)){
             try (Timer.Context t = timer.time()) {
-                String message = generateMessage();
+                message = generateMessage();
                 messageAsBytes = message.getBytes();
                 if (testParams.compressed) {
                     messageAsBytes = this.compress(message.getBytes());
@@ -80,7 +83,8 @@ public class Feed implements Runnable {
             } catch (Exception e) {
                 messageAsBytes = null;
             } finally {
-                this.meter.mark(messageAsBytes == null ? 0 : messageAsBytes.length);
+                this.originalMeter.mark(message == null ? 0 : message.getBytes().length);
+                this.sentMeter.mark(messageAsBytes == null ? 0 : messageAsBytes.length);
             }
         }
     }
