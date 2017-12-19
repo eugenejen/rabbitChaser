@@ -98,6 +98,8 @@ public class Main {
             String mode = System.getProperty("mode", "send").toLowerCase();
             String csvReportPath = System.getProperty("reportPath", "/tmp");
             TestParams testParams = new TestParams();
+            testParams.cacheMode = System.getProperty("cacheMode", "channel").equals("channel") ? CachingConnectionFactory.CacheMode.CHANNEL:
+                                   CachingConnectionFactory.CacheMode.CONNECTION;
             testParams.channelSize = Integer.parseInt(System.getProperty("channelSize", "1"));
             testParams.connectionSize = Integer.parseInt(System.getProperty("connectionSize", "1"));
             testParams.numberOfTests = Integer.parseInt(System.getProperty("numberOfTests", "1"));
