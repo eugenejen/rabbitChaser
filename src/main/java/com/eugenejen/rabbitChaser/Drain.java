@@ -4,6 +4,8 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
@@ -17,7 +19,7 @@ import java.util.Map;
 
 
 public class Drain implements Runnable {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(Drain.class);
     private ExecutorService executorService;
     private RabbitTemplate template;
     private TestParams testParams;
@@ -55,6 +57,7 @@ public class Drain implements Runnable {
     }
 
     private void readMessage() {
+        LOGGER.info("Thread name: {}", Thread.currentThread().getName());
         String message = null;
         byte[] messageBytes = null;
         do {

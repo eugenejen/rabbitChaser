@@ -5,6 +5,8 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import de.svenjacobs.loremipsum.LoremIpsum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -12,13 +14,12 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import java.io.ByteArrayOutputStream;
 import java.util.Random;
 
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
 
 public class Feed implements Runnable {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(Feed.class);
     private ExecutorService executorService;
     private Timer timer;
     private Meter originalMeter;
@@ -66,6 +67,7 @@ public class Feed implements Runnable {
     }
 
     private void sendMessage() {
+        LOGGER.info("Thread name: {}", Thread.currentThread().getName());
         byte[] messageAsBytes = null;
         String message = null;
         while (("feed".equals(mode) && !Thread.interrupted())
