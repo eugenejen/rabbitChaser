@@ -63,7 +63,7 @@ public class Drain implements Runnable {
         do {
             try (Timer.Context t = timer.time()) {
                 Message mo = this.template.receive(testParams.queueName);
-                messageBytes  = mo.getBody();
+                messageBytes = mo.getBody();
                 Map<String, Object> headers = mo.getMessageProperties().getHeaders();
                 if (headers.containsKey("content-encoding") && headers.get("content-encoding").equals("gzip")) {
                     message = this.decompress(messageBytes);
@@ -78,6 +78,7 @@ public class Drain implements Runnable {
             }
         } while (("drain".equals(mode) && message != null) ||
             ("read".equals(mode) && count.incrementAndGet() <= testParams.numberOfTests));
+
     }
 
     @Override
