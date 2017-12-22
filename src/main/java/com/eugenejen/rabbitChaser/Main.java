@@ -52,7 +52,7 @@ public class Main {
         factory.setCacheMode(testParams.cacheMode);
         factory.setChannelCacheSize(testParams.channelSize);
         if (testParams.cacheMode.equals(CachingConnectionFactory.CacheMode.CHANNEL)) {
-            factory.setChannelCheckoutTimeout(Integer.MAX_VALUE);
+            factory.setChannelCheckoutTimeout(30 * 1000);
         }
         factory.setConnectionCacheSize(testParams.connectionSize);
         if (testParams.cacheMode.equals(CachingConnectionFactory.CacheMode.CONNECTION)) {
