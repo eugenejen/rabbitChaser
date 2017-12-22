@@ -51,7 +51,13 @@ public class Main {
         this.factory = new CachingConnectionFactory(rabbitmqUri);
         factory.setCacheMode(testParams.cacheMode);
         factory.setChannelCacheSize(testParams.channelSize);
+        if (testParams.cacheMode.equals(CachingConnectionFactory.CacheMode.CHANNEL)) {
+            factory.setChannelCheckoutTimeout(Integer.MAX_VALUE);
+        }
         factory.setConnectionCacheSize(testParams.connectionSize);
+        if (testParams.cacheMode.equals(CachingConnectionFactory.CacheMode.CONNECTION)) {
+            factory.setConnectionLimit(testParams.connectionSize);
+        }
         this.threadPool = new ThreadPoolExecutor(testParams.threadPoolSize,
                                                  testParams.threadPoolSize, 0L,
                                                  TimeUnit.MILLISECONDS,
@@ -59,7 +65,6 @@ public class Main {
                                                  new ThreadPoolExecutor.CallerRunsPolicy());
         this.factory.getRabbitConnectionFactory().setMetricsCollector(collector);
         RabbitTemplate template = new RabbitTemplate(this.factory);
-
         if ("send".equals(this.mode) || "feed".equals(this.mode)) {
             this.test = new Feed(threadPool, registry, template, this.mode, testParams);
         } else if ("read".equals(this.mode) || "drain".equals(this.mode) ) {
