@@ -51,6 +51,7 @@ public class Main {
         this.factory = new CachingConnectionFactory(rabbitmqUri);
         factory.setCacheMode(testParams.cacheMode);
         factory.setChannelCacheSize(testParams.channelSize);
+        factory.setPublisherConfirms(testParams.confirmed);
         if (testParams.cacheMode.equals(CachingConnectionFactory.CacheMode.CHANNEL)) {
             factory.setChannelCheckoutTimeout(30 * 1000);
         }
@@ -111,6 +112,7 @@ public class Main {
             testParams.maxMessageSizeInWords = Integer.parseInt(System.getProperty("maxMessageSize", "40000"));
             testParams.queueName = System.getProperty("queueName", "default");
             testParams.compressed = Boolean.parseBoolean(System.getProperty("compressed", "false"));
+            testParams.confirmed = Boolean.parseBoolean(System.getProperty("confirmed", "false"));
             Main main = new Main(rabbitmqUrl, mode, testParams, csvReportPath);
             LOGGER.info("{}", main.toString());
             LOGGER.info("{}", testParams.toString());
