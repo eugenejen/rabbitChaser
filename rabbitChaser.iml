@@ -33,7 +33,7 @@
     <orderEntry type="library" name="Maven: org.springframework:spring-tx:5.0.2.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-web:5.0.2.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework.retry:spring-retry:1.2.1.RELEASE" level="project" />
-    <orderEntry type="library" name="Maven: com.rabbitmq:amqp-client:5.0.0" level="project" />
+    <orderEntry type="library" name="Maven: com.rabbitmq:amqp-client:5.4.0" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.25" level="project" />
     <orderEntry type="library" name="Maven: io.dropwizard.metrics:metrics-core:3.2.5" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-jms:5.0.2.RELEASE" level="project" />

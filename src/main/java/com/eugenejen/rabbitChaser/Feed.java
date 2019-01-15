@@ -84,7 +84,7 @@ public class Feed implements Runnable {
                 this.template.send(testParams.queueName, messageObject);
             } catch (Exception e) {
                 messageAsBytes = null;
-            } finally {
+                LOGGER.info("failed to send the message: {}", e);
                 this.originalMeter.mark(message == null ? 0 : message.getBytes().length);
                 this.sentMeter.mark(messageAsBytes == null ? 0 : messageAsBytes.length);
             }
