@@ -16,6 +16,7 @@ public class TestParams {
     public boolean returned = false;
     public boolean mandatory = false;
     public int replyTimeout = 1;
+    public boolean setCallback = false;
 
     public String toString() {
         return String.format("TestParams [numberOfTests=%d, " +
@@ -29,12 +30,13 @@ public class TestParams {
                 "confirmed=%b, " +
                 "retured=%b, " +
                 "mandatory=%b" +
-            "replyTimeout=%d" +
+                "replyTimeout=%d" +
+                "setCallback=%b" +
                 "]",
             this.numberOfTests, this.channelSize,
             this.connectionSize, this.threadPoolSize,
             this.minMessageSizeInWords, this.maxMessageSizeInWords,
             this.queueName, this.compressed, this.confirmed, this.returned, this.mandatory,
-            this.replyTimeout);
+            this.replyTimeout, this.setCallback);
     }
 };

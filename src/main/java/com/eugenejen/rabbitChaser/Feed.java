@@ -4,11 +4,14 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.rabbitmq.client.impl.AMQImpl;
 import de.svenjacobs.loremipsum.LoremIpsum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.io.ByteArrayOutputStream;
@@ -50,7 +53,9 @@ public class Feed implements Runnable {
         if (testParams.compressed) {
             this.messageProperties.setHeader("content-encoding", "gzip");
         }
-        setupCallbacks();
+        if(testParams.setCallback) {
+            setupCallbacks();
+        }
     }
 
     private void setupCallbacks() {
@@ -59,15 +64,18 @@ public class Feed implements Runnable {
                 LOGGER.info("Confirmed: " + (ack ? "ack " : "nack ") + "for correlation "
                     + ((correlationData == null) ? "" : correlationData));
                 this.confirmLatch.countDown();
-            });
+            }); 
         } else {
             template.setCorrelationDataPostProcessor(null);
         }
         if (this.testParams.returned) {
             template.setReturnCallback((message, replyCode, replyText, exchange, routingKey) -> {
+                this.returnLatch.countDown();
                 LOGGER.info("Returned: routing Key" + routingKey + " exchange " + exchange +
                     " replyText " + replyText + " replyCode " + replyCode + " message " + message);
-                this.returnLatch.countDown();
+                if(replyCode == 312) {
+                    throw new AmqpException(message.toString());
+                }
             });
         } else {
             template.setReturnCallback(null);
@@ -113,23 +121,16 @@ public class Feed implements Runnable {
                 } else {
                     messageAsBytes = message.getBytes();
                 }
-                Message messageObject = new Message(messageAsBytes, this.messageProperties);
-                this.template.send(testParams.queueName, messageObject);
-                if (testParams.confirmed) {
-                    if (this.confirmLatch.await(testParams.replyTimeout, TimeUnit.SECONDS)) {
-                        LOGGER.info("Confirmed received");
-                    } else {
-                        LOGGER.info("Confirmed not received");
-                    }
-                }
-                if (testParams.returned) {
-                    if (this.returnLatch.await(testParams.replyTimeout, TimeUnit.SECONDS)) {
-                        LOGGER.info("Return received");
-                    } else {
-                        LOGGER.info("Return not received");
-                    }
-                }
+                CorrelationData correlationData = new CorrelationData();
 
+                Message messageObject = new Message(messageAsBytes, this.messageProperties);
+                this.template.send(template.getExchange(), testParams.queueName,
+                    messageObject, correlationData);
+                CorrelationData.Confirm confirm = correlationData.getFuture().get();
+                Message returnedMessage = correlationData.getReturnedMessage();
+                LOGGER.info("Confirm status: " + confirm.isAck());
+                LOGGER.info("Confirm Reason: " + confirm.getReason());
+                LOGGER.info("Return Message: " + ((returnedMessage != null) ? returnedMessage.toString() : " null message!"));
             } catch (Exception e) {
                 messageAsBytes = null;
                 LOGGER.info("failed to send the message: {}", e);
