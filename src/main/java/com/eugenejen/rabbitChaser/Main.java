@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
+import javax.swing.text.StyledEditorKit;
 import java.io.File;
 import java.net.URI;
 import java.util.Locale;
@@ -52,6 +53,7 @@ public class Main {
         factory.setCacheMode(testParams.cacheMode);
         factory.setChannelCacheSize(testParams.channelSize);
         factory.setPublisherConfirms(testParams.confirmed);
+        factory.setPublisherReturns(testParams.returned);
         if (testParams.cacheMode.equals(CachingConnectionFactory.CacheMode.CHANNEL)) {
             factory.setChannelCheckoutTimeout(30 * 1000);
         }
@@ -66,6 +68,7 @@ public class Main {
                                                  new ThreadPoolExecutor.CallerRunsPolicy());
         this.factory.getRabbitConnectionFactory().setMetricsCollector(collector);
         RabbitTemplate template = new RabbitTemplate(this.factory);
+        template.setMandatory(testParams.mandatory);
         if ("send".equals(this.mode) || "feed".equals(this.mode)) {
             this.test = new Feed(threadPool, registry, template, this.mode, testParams);
         } else if ("read".equals(this.mode) || "drain".equals(this.mode) ) {
@@ -113,6 +116,8 @@ public class Main {
             testParams.queueName = System.getProperty("queueName", "default");
             testParams.compressed = Boolean.parseBoolean(System.getProperty("compressed", "false"));
             testParams.confirmed = Boolean.parseBoolean(System.getProperty("confirmed", "false"));
+            testParams.returned = Boolean.parseBoolean(System.getProperty("returned", "false"));
+            testParams.mandatory = Boolean.parseBoolean(System.getProperty("mandatory", "false"));
             Main main = new Main(rabbitmqUrl, mode, testParams, csvReportPath);
             LOGGER.info("{}", main.toString());
             LOGGER.info("{}", testParams.toString());

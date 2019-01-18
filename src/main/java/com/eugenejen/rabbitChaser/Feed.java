@@ -13,8 +13,9 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Random;
-
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
 
@@ -32,6 +33,8 @@ public class Feed implements Runnable {
     private String mode;
     private Counter threadCounter;
     private MessageProperties messageProperties;
+    private CountDownLatch confirmLatch = new CountDownLatch(1);
+    private CountDownLatch returnLatch = new CountDownLatch(1);
 
     Feed(ExecutorService executorService, MetricRegistry metricRegistry, RabbitTemplate template, String mode, TestParams testParams) {
         this.executorService = executorService;
@@ -46,6 +49,36 @@ public class Feed implements Runnable {
         this.messageProperties.setContentType(MessageProperties.CONTENT_TYPE_BYTES);
         if (testParams.compressed) {
             this.messageProperties.setHeader("content-encoding", "gzip");
+        }
+        setupCallbacks();
+    }
+
+    private void setupCallbacks() {
+        if (this.testParams.confirmed) {
+            template.setConfirmCallback((correlationData, ack, cause) -> {
+                LOGGER.info("Confirmed: " + (ack ? "ack " : "nack ") + "for correlation "
+                    + ((correlationData == null) ? "" : correlationData));
+                this.confirmLatch.countDown();
+            });
+        } else {
+            template.setCorrelationDataPostProcessor(null);
+        }
+        if (this.testParams.returned) {
+            template.setReturnCallback((message, replyCode, replyText, exchange, routingKey) -> {
+                LOGGER.info("Returned: routing Key" + routingKey + " exchange " + exchange +
+                    " replyText " + replyText + " replyCode " + replyCode + " message " + message);
+                this.returnLatch.countDown();
+            });
+        } else {
+            template.setReturnCallback(null);
+        }
+        if (testParams.confirmed || testParams.returned) {
+            template.setCorrelationDataPostProcessor((message, correlationData) -> {
+                LOGGER.info("Correlation Data: " + " message " + message + " correlationData " + correlationData);
+                return correlationData;
+            });
+        } else {
+            template.setCorrelationDataPostProcessor(null);
         }
     }
 
@@ -71,7 +104,7 @@ public class Feed implements Runnable {
         byte[] messageAsBytes = null;
         String message = null;
         while (("feed".equals(mode) && !Thread.interrupted())
-            || ("send".equals(mode) && count.incrementAndGet() <= testParams.numberOfTests)){
+            || ("send".equals(mode) && count.incrementAndGet() <= testParams.numberOfTests)) {
             try (Timer.Context t = timer.time()) {
                 message = generateMessage();
                 messageAsBytes = message.getBytes();
@@ -82,6 +115,21 @@ public class Feed implements Runnable {
                 }
                 Message messageObject = new Message(messageAsBytes, this.messageProperties);
                 this.template.send(testParams.queueName, messageObject);
+                if (testParams.confirmed) {
+                    if (this.confirmLatch.await(1, TimeUnit.SECONDS)) {
+                        LOGGER.info("Confirmed received");
+                    } else {
+                        LOGGER.info("Confirmed not received");
+                    }
+                }
+                if (testParams.returned) {
+                    if (this.returnLatch.await(1, TimeUnit.SECONDS)) {
+                        LOGGER.info("Return received");
+                    } else {
+                        LOGGER.info("Return not received");
+                    }
+                }
+
             } catch (Exception e) {
                 messageAsBytes = null;
                 LOGGER.info("failed to send the message: {}", e);

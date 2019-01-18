@@ -13,21 +13,25 @@ public class TestParams {
     public String queueName = "default";
     public boolean compressed = false;
     public boolean confirmed = false;
+    public boolean returned = false;
+    public boolean mandatory = false;
 
     public String toString() {
         return String.format("TestParams [numberOfTests=%d, " +
-                             "channelSize=%d, " +
-                             "connectionSize=%d, " +
-                             "threadPoolSize=%d, " +
-                             "minMessageSize=%d, " +
-                             "maxMessageSize=%d, " +
-                             "queue=%s, " +
-                             "compressed=%b, " +
-                             "confirmed=%b]",
-                             this.numberOfTests, this.channelSize,
-                             this.connectionSize, this.threadPoolSize,
-                             this.minMessageSizeInWords, this.maxMessageSizeInWords,
-                             this.queueName, this.compressed, this.confirmed
-                             );
+                "channelSize=%d, " +
+                "connectionSize=%d, " +
+                "threadPoolSize=%d, " +
+                "minMessageSize=%d, " +
+                "maxMessageSize=%d, " +
+                "queue=%s, " +
+                "compressed=%b, " +
+                "confirmed=%b, " +
+                "retured=%b, " +
+                "mandatory=%b" +
+                "]",
+            this.numberOfTests, this.channelSize,
+            this.connectionSize, this.threadPoolSize,
+            this.minMessageSizeInWords, this.maxMessageSizeInWords,
+            this.queueName, this.compressed, this.confirmed, this.returned, this.mandatory);
     }
 };
