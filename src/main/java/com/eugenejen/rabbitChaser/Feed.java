@@ -116,14 +116,14 @@ public class Feed implements Runnable {
                 Message messageObject = new Message(messageAsBytes, this.messageProperties);
                 this.template.send(testParams.queueName, messageObject);
                 if (testParams.confirmed) {
-                    if (this.confirmLatch.await(1, TimeUnit.SECONDS)) {
+                    if (this.confirmLatch.await(testParams.replyTimeout, TimeUnit.SECONDS)) {
                         LOGGER.info("Confirmed received");
                     } else {
                         LOGGER.info("Confirmed not received");
                     }
                 }
                 if (testParams.returned) {
-                    if (this.returnLatch.await(1, TimeUnit.SECONDS)) {
+                    if (this.returnLatch.await(testParams.replyTimeout, TimeUnit.SECONDS)) {
                         LOGGER.info("Return received");
                     } else {
                         LOGGER.info("Return not received");

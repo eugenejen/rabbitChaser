@@ -118,6 +118,7 @@ public class Main {
             testParams.confirmed = Boolean.parseBoolean(System.getProperty("confirmed", "false"));
             testParams.returned = Boolean.parseBoolean(System.getProperty("returned", "false"));
             testParams.mandatory = Boolean.parseBoolean(System.getProperty("mandatory", "false"));
+            testParams.replyTimeout = Integer.parseInt(System.getProperty("replyTimeout", "1"));
             Main main = new Main(rabbitmqUrl, mode, testParams, csvReportPath);
             LOGGER.info("{}", main.toString());
             LOGGER.info("{}", testParams.toString());
