@@ -64,7 +64,7 @@ public class Feed implements Runnable {
                 LOGGER.info("Confirmed: " + (ack ? "ack " : "nack ") + "for correlation "
                     + ((correlationData == null) ? "" : correlationData));
                 this.confirmLatch.countDown();
-            }); 
+            });
         } else {
             template.setCorrelationDataPostProcessor(null);
         }
